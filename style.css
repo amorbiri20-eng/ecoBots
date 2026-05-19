@@ -1,0 +1,24 @@
+body {
+margin: 0;
+overflow: hidden;
+font-family: Arial;
+background: black;
+}
+canvas {
+display: block;
+}
+#ui {
+position: absolute;
+top: 10px;
+left: 10px;
+color: white;
+font-size: 20px;
+z-index: 100;
+}
+#ui div {
+margin-bottom: 10px;
+background: rgba(0,0,0,0.5);
+padding: 10px;
+
+border-radius: 10px;
+}

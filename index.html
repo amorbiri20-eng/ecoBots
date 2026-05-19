@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<!-- Librería para el Joystick Táctil en Celulares -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.9.0/nipplejs.min.js"></script>
+
+<!-- Zonas de control táctil (Solo visibles en pantallas táctiles o móviles) -->
+<div id="controles-moviles">
+  <div id="zona-joystick"></div>
+  <button id="boton-disparar-movil">🔥</button>
+</div>
+
+<style>
+  /* Por defecto ocultamos los controles en PC, solo aparecen si es pantalla chica */
+  #controles-moviles {
+    display: none;
+  }
+  
+  @media (max-width: 1024px) {
+    #controles-moviles {
+      display: block;
+    }
+    #zona-joystick {
+      position: absolute;
+      bottom: 40px;
+      left: 40px;
+      width: 150px;
+      height: 150px;
+      z-index: 200;
+    }
+    #boton-disparar-movil {
+      position: absolute;
+      bottom: 60px;
+      right: 40px;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: rgba(255, 0, 85, 0.7);
+      border: 3px solid #ff0055;
+      color: white;
+      font-size: 2rem;
+      z-index: 200;
+      box-shadow: 0 0 15px #ff0055;
+    }
+  }
+</style>
+<head>
+  <meta charset="UTF-8">
+  <title>EcoBots</title>
+  <link rel="stylesheet" href="style.css">
+
+  <!-- 🔥 IMPORT MAP (CLAVE) -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js"
+    }
+  }
+  </script>
+</head>
+
+<body>
+
+<!-- INTERFAZ DE USUARIO (HUD) CIBERPUNK -->
+<div id="hud-contenedor">
+  <!-- Barra de Vida -->
+  <div class="hud-bloque">
+    <span class="hud-etiqueta">HP</span>
+    <div class="hud-barra-fondo">
+      <div id="barra-vida" class="hud-barra-llenado vida"></div>
+    </div>
+  </div>
+  
+  <!-- Barra de Energía -->
+  <div class="hud-bloque">
+    <span class="hud-etiqueta">ENG</span>
+    <div class="hud-barra-fondo">
+      <div id="barra-energia" class="hud-barra-llenado energia"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ESTILOS NEÓN PARA LAS BARRAS -->
+<style>
+  #hud-contenedor {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 100; /* Asegura que flote sobre el juego 3D */
+    font-family: 'Courier New', Courier, monospace;
+    background: rgba(5, 5, 20, 0.75);
+    padding: 15px;
+    border: 2px solid #00ffcc;
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0, 255, 204, 0.3);
+  }
+  .hud-bloque {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .hud-bloque:last-child {
+    margin-bottom: 0;
+  }
+  .hud-etiqueta {
+    color: #00ffcc;
+    font-weight: bold;
+    width: 40px;
+    text-shadow: 0 0 5px #00ffcc;
+  }
+  .hud-barra-fondo {
+    width: 200px;
+    height: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(0, 255, 204, 0.5);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .hud-barra-llenado {
+    height: 100%;
+    width: 100%; /* Empiezan llenas al 100% */
+    transition: width 0.2s ease-out; /* Animación suave al bajar */
+  }
+  .vida {
+    background: linear-gradient(90deg, #00ff66, #00ffcc);
+    box-shadow: 0 0 10px #00ff66;
+  }
+  .energia {
+    background: linear-gradient(90deg, #0066ff, #00ffff);
+    box-shadow: 0 0 10px #0066ff;
+  }
+</style>
+<script type="module" src="./game.js"></script>
+
+</body>
+</html>
