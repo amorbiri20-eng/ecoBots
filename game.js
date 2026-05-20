@@ -1,136 +1,191 @@
-// ESCENA
+// ==========================================================
+// 🌌 ESCENA Y ENTORNO ATMOSFÉRICO (CIELO AZUL CYBERPUNK)
+// ==========================================================
 import * as THREE from "three";
 import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/loaders/GLTFLoader.js";
 
 const loader = new GLTFLoader();
 const scene = new THREE.Scene();
 const explosions = [];
-scene.background = new THREE.Color(0x050510);
 
-scene.fog = new THREE.Fog(0x00ff99, 20, 120);
+// --- NUEVO CIELO CON DEGRADADO AZUL ---
+const canvasCielo = document.createElement('canvas');
+canvasCielo.width = 1;
+canvasCielo.height = 32;
+const ctxCielo = canvasCielo.getContext('2d');
+const gradient = ctxCielo.createLinearGradient(0, 0, 0, 32);
+gradient.addColorStop(0, '#020208');   // Azul-negro profundo (Cenit/Arriba)
+gradient.addColorStop(0.5, '#0a1432'); // Azul eléctrico oscuro (Medio)
+gradient.addColorStop(1, '#00ffff');   // Cyan brillante neón (Horizonte/Abajo)
+ctxCielo.fillStyle = gradient;
+ctxCielo.fillRect(0, 0, 1, 32);
 
+const backgroundTexture = new THREE.CanvasTexture(canvasCielo);
+scene.background = backgroundTexture;
 
-
+// Cambiamos la niebla a un tono azul/cyan para que se fusione con el horizonte
+scene.fog = new THREE.Fog(0x0a1432, 30, 140);
 // CAMARA
-const camera = new THREE.PerspectiveCamera(
-  75,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  1000
-);
-
-// RENDER
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
 // RENDER CON CONFIGURACIÓN DE ALTA CALIDAD
-
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.shadowMap.enabled = true;                  // 🔥 ACTIVA LAS SOMBRAS
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;    // Sombras suaves y realistas
-renderer.toneMapping = THREE.ACESFilmicToneMapping;  // Estilo cinematográfico (colores cyberpunk vibrantes)
+renderer.shadowMap.enabled = true;                  
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;    
+renderer.toneMapping = THREE.ACESFilmicToneMapping;  
 renderer.toneMappingExposure = 1.2;
 document.body.appendChild(renderer.domElement);
 
-// ILUMINACIÓN MEJORADA
-// Luz direccional (Simula la luna o un holograma gigante en el cielo que genera sombras)
-const light = new THREE.DirectionalLight(0xffffff, 1.5);
-light.position.set(30, 50, 20);
+// ==========================================================
+// 💡 ILUMINACIÓN GLOBAL
+// ==========================================================
+const ambientLight = new THREE.AmbientLight(0x4040a0, 0.9); 
+scene.add(ambientLight);
+
+const light = new THREE.DirectionalLight(0xffffff, 1.2); 
+light.position.set(20, 40, 20); 
 light.castShadow = true; 
-// Optimizar la resolución de la sombra
-light.shadow.mapSize.width = 2048;
+light.shadow.mapSize.width = 2048; 
 light.shadow.mapSize.height = 2048;
 light.shadow.camera.near = 0.5;
-light.shadow.camera.far = 150;
-const d = 100; // Área que cubre la sombra
-light.shadow.camera.left = -d;
-light.shadow.camera.right = d;
-light.shadow.camera.top = d;
-light.shadow.camera.bottom = -d;
+light.shadow.camera.far = 100;
 scene.add(light);
 
-// Luz ambiental de la ciudad (Azul/Cyan Cyberpunk de relleno)
 const ambient = new THREE.AmbientLight(0x0a1128, 2.0); 
 scene.add(ambient);
 
-// Añadir un punto de luz de neón cerca del centro como prueba (Luz Rosa/Fucsia)
 const neonLight = new THREE.PointLight(0xff00ff, 3, 50);
 neonLight.position.set(0, 5, 0);
 scene.add(neonLight);
-// SUELO
-const floorGeometry = new THREE.PlaneGeometry(200, 200);
-const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x2b2b2b });
+
+// ==========================================================
+// 🛣️ SUELO DE CONCRETO GENERADO POR CÓDIGO (¡SIN IMÁGENES!)
+// ==========================================================
+
+// 1. Creamos un patrón de concreto usando un Canvas en memoria
+const canvasConcreto = document.createElement('canvas');
+canvasConcreto.width = 512;
+canvasConcreto.height = 512;
+const ctxConcreto = canvasConcreto.getContext('2d');
+
+// Color base del concreto (Gris oscuro Cyberpunk)
+ctxConcreto.fillStyle = '#1e1e24';
+ctxConcreto.fillRect(0, 0, 512, 512);
+
+// Añadimos el "ruido" poroso del concreto (puntos más claros y oscuros)
+for (let i = 0; i < 10000; i++) {
+    let x = Math.random() * 512;
+    let y = Math.random() * 512;
+    let tamaño = Math.random() * 2;
+    // Puntos gris claro para textura
+    ctxConcreto.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.15)';
+    ctxConcreto.fillRect(x, y, tamaño, tamaño);
+}
+
+// Dibujamos unas líneas finas de unión de las placas de concreto
+ctxConcreto.strokeStyle = 'rgba(0, 0, 0, 0.4)';
+ctxConcreto.lineWidth = 3;
+ctxConcreto.strokeRect(0, 0, 512, 512);
+
+// 2. Convertimos el canvas en una textura de Three.js
+const concreteTexture = new THREE.CanvasTexture(canvasConcreto);
+concreteTexture.wrapS = THREE.RepeatWrapping;
+concreteTexture.wrapT = THREE.RepeatWrapping;
+concreteTexture.repeat.set(20, 20); // Controla qué tan grandes se ven los bloques en el mapa
+
+// 3. Creamos el material definitivo mate que recibe sombras
+const floorMaterial = new THREE.MeshStandardMaterial({ 
+    map: concreteTexture,
+    roughness: 0.85, // Alto para que sea mate como el cemento real
+    metalness: 0.05  // Casi nada de reflejo metálico
+});
+
+const floorGeometry = new THREE.PlaneGeometry(300, 300);
 const floor = new THREE.Mesh(floorGeometry, floorMaterial);
 floor.rotation.x = -Math.PI / 2;
+floor.position.y = -0.01; 
+floor.receiveShadow = true; // 🔥 Crucial para ver las sombras de los robots
 scene.add(floor);
 
-// JUGADOR
-let player = null;
+// ==========================================================
+// 👤 JUGADOR (INICIO INSTANTÁNEO INTEGRADO)
+// ==========================================================
+// Creamos un contenedor inmediato para que puedas disparar desde el segundo 0
+let player = new THREE.Group(); 
+player.position.set(0, 0, 0);
+scene.add(player);
 
-loader.load(
-  'models/player.glb', 
-  (gltf) => {
-    player = gltf.scene;
-    scene.add(player);
-    console.log("Modelo del jugador cargado");
+loader.load('models/player.glb', (gltf) => {
+    const modeloVisual = gltf.scene;
+    modeloVisual.traverse(n => { if(n.isMesh) n.castShadow = true; });
+    player.add(modeloVisual); 
+    console.log("Modelo del jugador cargado e inyectado");
   },
   undefined,
-  (error) => {
-    console.error("Error cargando el modelo del jugador:", error);
-  }
+  (error) => console.error("Error cargando el modelo del jugador:", error)
 );
 
-// VARIABLES
-let vida = 100;
-let energia = 100;
-let basuraRecolectada = 0;
-let contaminacion = 0;
+// VARIABLES GLOBALES DE ESTADO
 let vidaJugador = 100;
 let energiaJugador = 100;
+let contaminacion = 0;
 
-// CONTROLES
+// CONTADORES DE PARTIDA ACTUAL Y RÉCORDS
+let robotsMatados = 0;
+let basuraRecolectada = 0;
+
+let recordRobots = localStorage.getItem('recordRobots') ? parseInt(localStorage.getItem('recordRobots')) : 0;
+let recordBasura = localStorage.getItem('recordBasura') ? parseInt(localStorage.getItem('recordBasura')) : 0;
+
+function inicializarMarcadores() {
+  const elRecRobots = document.getElementById('record-robots');
+  const elRecBasura = document.getElementById('record-basura');
+  if (elRecRobots) elRecRobots.innerText = recordRobots;
+  if (elRecBasura) elRecBasura.innerText = recordBasura;
+}
+window.addEventListener('DOMContentLoaded', inicializarMarcadores);
+
+// CONTROLES DE TECLADO Y MOUSE
 const keys = {};
 let mouseX = 0;
 let mouseY = 0;
+let camaraAnguloX = 0; // Controla el giro de 360 grados de izquierda a derecha
+let camaraAnguloY = 0.5; // Controla la altura de la cámara (arriba/abajo)
+const radioCamara = 15; // Qué tan lejos está la cámara del robot
 
 document.addEventListener('mousemove', (event) => {
-  mouseX = (event.clientX / window.innerWidth) * 2 - 1;
-  mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+  // Captura el movimiento puro del mouse incluso si el cursor está oculto
+  camaraAnguloX -= event.movementX * 0.003; // Sensibilidad de izquierda a derecha
+  camaraAnguloY += event.movementY * 0.003; // Sensibilidad de arriba a abajo
+
+  // Límites para que la cámara no se ponga de cabeza (vista de pájaro o suelo)
+  if (camaraAnguloY < 0.2) camaraAnguloY = 0.2;
+  if (camaraAnguloY > 1.2) camaraAnguloY = 1.2;
 });
 
-window.addEventListener('keydown', (e) => {
-  keys[e.key.toLowerCase()] = true;
-});
-
-window.addEventListener('keyup', (e) => {
-  keys[e.key.toLowerCase()] = false;
-});
+// 🔥 BLOQUEO DEL MOUSE AUTOMÁTICO AL HACER CLIC EN EL JUEGO
+renderer.domElement.addEventListener('click', () => {
+  renderer.domElement.requestPointerLock();
+})
+window.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; });
+window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
 
 // ==========================================================
-// 🔥 SISTEMA DE BASURA ELECTRÓNICA OPTIMIZADO (¡SIN LAG!)
+// ♻️ SISTEMA DE BASURA ELECTRÓNICA OPTIMIZADO (RESPAWN INCLUIDO)
 // ==========================================================
 const basuraObjects = [];
-const modelosBasuraCargados = []; // Aquí guardaremos los 7 moldes originales
+const modelosBasuraCargados = []; 
 
 const listaBasuraGLB = [
-  'models/basura1.glb',
-  'models/basura2.glb',
-  'models/basura3.glb',
-  'models/basura4.glb',
-  'models/basura5.glb',
-  'models/basura6.glb',
-  'models/basura7.glb'
+  'models/basura1.glb', 'models/basura2.glb', 'models/basura3.glb',
+  'models/basura4.glb', 'models/basura5.glb', 'models/basura6.glb', 'models/basura7.glb'
 ];
 
-// 1. Cargamos los 7 modelos en memoria de forma ultra rápida
 let modelosProcesados = 0;
-
-listaBasuraGLB.forEach((ruta, index) => {
+listaBasuraGLB.forEach((ruta) => {
   loader.load(ruta, (gltf) => {
     const molde = gltf.scene;
-    
-    // Dejamos el molde listo con su tamaño y sombras óptimas
     const escalaBasura = 0.1; 
     molde.scale.set(escalaBasura, escalaBasura, escalaBasura);
     
@@ -145,152 +200,79 @@ listaBasuraGLB.forEach((ruta, index) => {
       }
     });
 
-    // Guardamos el molde en nuestra lista de memoria
     modelosBasuraCargados.push(molde);
     modelosProcesados++;
 
-    // 2. CUANDO LOS 7 MOLDES ESTÉN LISTOS, CREAMOS LAS 30 COPIAS AL INSTANTE
     if (modelosProcesados === listaBasuraGLB.length) {
       generarDistribucionBasura();
     }
-  }, 
-  undefined, 
-  (error) => console.error("Error cargando molde base:", ruta, error));
+  }, undefined, (error) => console.error("Error cargando molde base:", error));
 });
 
-// Función que distribuye las 30 piezas usando clones (así no consume recursos)
 function generarDistribucionBasura() {
   for (let i = 0; i < 30; i++) {
-    // Elegimos uno de los moldes que ya tenemos descargados en memoria
     const moldeAleatorio = modelosBasuraCargados[Math.floor(Math.random() * modelosBasuraCargados.length)];
-    
-    // ¡EL TRUCO!: Clonamos el objeto en lugar de usar el loader.load de nuevo
     const clonBasura = moldeAleatorio.clone();
-    
-    // Le asignamos su posición al azar en el mapa
-    let x = Math.random() * 100 - 50;
-    let z = Math.random() * 100 - 50;
-    clonBasura.position.set(x, 0, z);
-    
-    // Rotación única para que varíen visualmente
+    clonBasura.position.set(Math.random() * 100 - 50, 0, Math.random() * 100 - 50);
     clonBasura.rotation.y = Math.random() * Math.PI * 2;
-
-    // Agregar a la escena y a la lista de recolección
     scene.add(clonBasura);
     basuraObjects.push(clonBasura); 
   }
-  console.log("¡30 piezas de e-waste clonadas y distribuidas con éxito sin lag!");
 }
-// ==========================================
-// 1. LISTA DE EDIFICIOS PREFABRICADOS
-// ==========================================
+
+// ==========================================================
+// 🏢 GENERACIÓN DE LA CIUDAD REAL
+// ==========================================================
 const misEdificiosGLB = [
-  "models/building-sample-house-a.glb",
-  "models/building-sample-house-b.glb",
-  "models/building-sample-house-c.glb",
-  "models/building-sample-tower-a.glb",
-  "models/building-sample-tower-b.glb",
-  "models/building-sample-tower-c.glb",
+  "models/building-sample-house-a.glb", "models/building-sample-house-b.glb",
+  "models/building-sample-house-c.glb", "models/building-sample-tower-a.glb",
+  "models/building-sample-tower-b.glb", "models/building-sample-tower-c.glb",
   "models/building-sample-tower-d.glb"
 ];
 
-// ==========================================
-// 2. FUNCIÓN PARA CONSTRUIR LA CIUDAD
-// ==========================================
 function construirCiudadReal() {
-  // El bucle "for" se encarga de repetir este proceso 40 veces de forma automática
   for (let i = 0; i < 40; i++) {
-    
-    // Selecciona una casa o torre al azar de la lista
     const modeloAleatorio = misEdificiosGLB[Math.floor(Math.random() * misEdificiosGLB.length)];
-    
-    // Cargamos el archivo .glb seleccionado
     loader.load(modeloAleatorio, (gltf) => {
       const edificio = gltf.scene;
-      
-      // Los distribuye de forma aleatoria por el mapa (X y Z)
-      let x = Math.random() * 160 - 80;
-      let z = Math.random() * 160 - 80;
-      edificio.position.set(x, 0, z);
-      
-      // Escala de los edificios. Si se ven muy chicos o muy grandes en tu juego,
-      // puedes cambiar estos números (ej. 1, 1, 1 o 3, 3, 3)
+      edificio.position.set(Math.random() * 160 - 80, 0, Math.random() * 160 - 80);
       edificio.scale.set(4, 4, 4); 
-      
-      // Los rota al azar en ángulos de 90 grados para que las calles tengan variedad
       edificio.rotation.y = (Math.floor(Math.random() * 4) * Math.PI) / 2;
-
-      // Activa las sombras para que el juego se vea más realista
       edificio.traverse((node) => {
-        if (node.isMesh) { 
-          node.castShadow = true; 
-          node.receiveShadow = true; 
-        }
+        if (node.isMesh) { node.castShadow = true; node.receiveShadow = true; }
       });
-      
-      // Agrega el edificio finalmente a tu escena de Three.js
       scene.add(edificio);
-    }, 
-    undefined, 
-    (error) => console.error("Error cargando:", modeloAleatorio, error));
+    }, undefined, (error) => console.error("Error cargando edificio:", error));
   }
 }
-
-// ==========================================
-// 3. EJECUCIÓN DE LA FUNCIÓN
-// ==========================================
-// Llamamos a la función una sola vez para que levante los 40 edificios
 construirCiudadReal();
 
+// ==========================================================
+// 🤖 ENEMIGOS (SISTEMA DE GENERACIÓN Y RESPAWN)
+// ==========================================================
+const enemies = []; 
 
-// ==========================================
-// 1. LISTA DE ENEMIGOS EN JUEGO
-// ==========================================
-const enemies = []; // Array para guardar a los enemigos y que puedan moverse/disparar
-
-// ==========================================
-// 2. FUNCIÓN PARA CREAR CADA ENEMIGO (La que se había borrado)
-// ==========================================
 function crearEnemy(x, z) {
-  // ⚠️ IMPORTANTE: Cambia "robot.glb" por el nombre exacto de tu archivo de enemigo
   loader.load('models/enemy.glb', (gltf) => {
     const enemy = gltf.scene;
-    
-    // Lo posicionamos usando los números aleatorios que manda el bucle
     enemy.position.set(x, 0, z);
-    
-    // Ajusta la escala si tu enemigo se ve muy gigante o muy pulga
     enemy.scale.set(1.5, 1.5, 1.5); 
-    
-    // Activamos sombras para el enemigo
+    enemy.userData = { vida: 75 }; // Inicialización robusta de la vida del robot
     enemy.traverse((node) => {
-      if (node.isMesh) {
-        node.castShadow = true;
-        node.receiveShadow = true;
-      }
+      if (node.isMesh) { node.castShadow = true; node.receiveShadow = true; }
     });
-    
     scene.add(enemy);
-    enemies.push(enemy); // Lo guardamos en la lista de enemigos activos
-  }, 
-  undefined, 
-  (error) => console.error("Error cargando enemigo:", error));
+    enemies.push(enemy); 
+  }, undefined, (error) => console.error("Error cargando enemigo:", error));
 }
 
-// ==========================================
-// 3. BUCLE PARA CREAR LOS 5 ENEMIGOS
-// ==========================================
 for (let i = 0; i < 15; i++) {
-  // Los esparce en un rango ideal para que los encuentres rápido
-  let x = Math.random() * 120 - 60;
-  let z = Math.random() * 120 - 60;
-  
-  crearEnemy(x, z);
+  crearEnemy(Math.random() * 120 - 60, Math.random() * 120 - 60);
 }
 
-// ==========================================
-// 4. DISPAROS Y LOGICA (Tu código limpio)
-// ==========================================
+// ==========================================================
+// 🔫 LÓGICA DE DISPAROS COMPLETA
+// ==========================================================
 const bullets = [];
 const enemyBullets = [];
 
@@ -298,27 +280,35 @@ function shoot() {
   if (!player) return; 
 
   const geo = new THREE.SphereGeometry(0.3);
-  const mat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+  const mat = new THREE.MeshBasicMaterial({ color: 0xffff00 }); // Bala Amarilla
   const bullet = new THREE.Mesh(geo, mat);
 
+  // La bala nace desde el pecho del robot
   bullet.position.copy(player.position);
-  bullet.position.y += 1; // Eleva el disparo a la altura del arma/pecho
+  bullet.position.y += 1.2; 
 
-  const direction = new THREE.Vector3();
-  player.getWorldDirection(direction); 
+  // Vector frontal nativo del modelo
+  const direction = new THREE.Vector3(0, 0, 1); 
+  
+  // 🔥 CORRECCIÓN DE DIRECCIÓN INVERTIDA:
+  // Le sumamos Math.PI (180 grados) a la rotación del personaje para que la bala 
+  // salga hacia adelante de sus ojos y no hacia su espalda.
+  direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y + Math.PI);
+  direction.normalize();
 
-  bullet.userData = { velocity: direction.clone().multiplyScalar(0.8) };
+  // Asignamos la velocidad final en esa dirección exacta
+  bullet.userData = { velocity: direction.multiplyScalar(1.5) };
 
   scene.add(bullet);
   bullets.push(bullet);
+  console.log("🔫 Bala corregida: disparando hacia el frente real del personaje");
 }
 
-// Función de disparo enemigo
 function enemyShoot(enemy) {
   if (!player) return;
 
   const geo = new THREE.SphereGeometry(0.3);
-  const mat = new THREE.MeshBasicMaterial({ color: 0xff0000 }); // Balas Rojas
+  const mat = new THREE.MeshBasicMaterial({ color: 0xff0000 }); 
   const bullet = new THREE.Mesh(geo, mat);
 
   bullet.position.copy(enemy.position);
@@ -326,13 +316,12 @@ function enemyShoot(enemy) {
 
   const direction = new THREE.Vector3();
   direction.subVectors(player.position, enemy.position).normalize();
-
   bullet.userData = { velocity: direction.multiplyScalar(0.5) };
 
   scene.add(bullet);
   enemyBullets.push(bullet);
 }
-// MOVIMIENTO (Soporta WASD y Flechas)
+
 function movePlayer() {
   if (!player) return;
 
@@ -340,47 +329,43 @@ function movePlayer() {
   let dirX = 0;
   let dirZ = 0;
 
-  if (keys['arrowup'] || keys['w']) dirZ -= 1;
-  if (keys['arrowdown'] || keys['s']) dirZ += 1;
+  // 🔥 CAPTURA LETRAS Y FLECHAS POR IGUAL
+  if (keys['arrowup'] || keys['w']) dirZ += 1;    // Cambiado a + para ir al frente real
+  if (keys['arrowdown'] || keys['s']) dirZ -= 1;  // Cambiado a - para ir atrás real
   if (keys['arrowleft'] || keys['a']) dirX -= 1;
   if (keys['arrowright'] || keys['d']) dirX += 1;
 
-  // Evitar diagonal más rápida
   if (dirX !== 0 && dirZ !== 0) {
     dirX *= 0.7071;
     dirZ *= 0.7071;
   }
 
-  player.position.x += dirX * speed;
-  player.position.z += dirZ * speed;
+  // Componentes de dirección basados en la vista de la cámara
+  const forwardX = Math.sin(camaraAnguloX);
+  const forwardZ = Math.cos(camaraAnguloX);
 
-  // Rotar el modelo hacia donde camina
   if (dirX !== 0 || dirZ !== 0) {
-    let angle = Math.atan2(dirX, dirZ);
-    player.rotation.y = angle;
-  }
+    // Calculamos el movimiento exacto relativo a la pantalla
+    player.position.x += (dirX * forwardZ - dirZ * forwardX) * speed;
+    player.position.z += (dirX * -forwardX - dirZ * forwardZ) * speed;
 
-  // 🔥 LÓGICA DE ENERGÍA (Gasta al moverse, recupera quieto)
-  // ¡Ahora sí está dentro de la función y reconocerá dirX y dirZ!
+    // El robot gira su cuerpo hacia donde lo estás moviendo (Teclas o Flechas)
+    let anguloMovimiento = Math.atan2(dirX, dirZ) + camaraAnguloX;
+    player.rotation.y = anguloMovimiento;
+  } 
+
+  // LÓGICA DE ENERGÍA
   const elBarraEnergia = document.getElementById('barra-energia');
-    
   if (dirX !== 0 || dirZ !== 0) {
-    // Si se está moviendo, gasta energía lentamente
     energiaJugador -= 0.15;
     if (energiaJugador < 0) energiaJugador = 0;
   } else {
-    // Si está quieto, se recarga sola
     energiaJugador += 0.25;
     if (energiaJugador > 100) energiaJugador = 100;
   }
-
-  // Actualizar la barra azul en el HTML
-  if (elBarraEnergia) {
-    elBarraEnergia.style.width = energiaJugador + '%';
-  }
-} // ==========================================================
-// ♻️ SISTEMA DE BASURA ELECTRÓNICA PROGRESIVA (RESPAWN)
-// ==========================================================
+  if (elBarraEnergia) elBarraEnergia.style.width = energiaJugador + '%';
+}
+ 
 function recogerBasura() {
   if (!player) return;
 
@@ -388,21 +373,20 @@ function recogerBasura() {
     if (player.position.distanceTo(basuraObjects[i].position) < 2.5) {
       console.log("🔋 ¡E-Waste recolectado!");
       
-      // 1. Borramos la basura de la pantalla
+      basuraRecolectada++;
+      const elValBasura = document.getElementById('val-basura');
+      if (elValBasura) elValBasura.innerText = basuraRecolectada;
+
       scene.remove(basuraObjects[i]);
       basuraObjects.splice(i, 1);
 
-      // 🔥 LÓGICA DE CURACIÓN: Sumar 15 HP sin pasar del 100%
       vidaJugador += 15;
       if (vidaJugador > 100) vidaJugador = 100;
 
-      // Actualizar la barra visual verde en el HTML
       const elBarraVida = document.getElementById('barra-vida');
-      if (elBarraVida) {
-        elBarraVida.style.width = vidaJugador + '%';
-      }
+      if (elBarraVida) elBarraVida.style.width = vidaJugador + '%';
 
-      // 2. Programar que aparezca nueva basura en 3 segundos
+      // Respawn dinámico de basura a los 3 segundos
       setTimeout(() => {
         if (modelosBasuraCargados.length > 0) {
           const moldeAleatorio = modelosBasuraCargados[Math.floor(Math.random() * modelosBasuraCargados.length)];
@@ -416,7 +400,7 @@ function recogerBasura() {
     }
   }
 }
-// IA ENEMIGOS
+
 function enemyAI() {
   if (!player) return;
 
@@ -429,21 +413,16 @@ function enemyAI() {
     }
     
     if (dist < 20) {
-      if (Math.random() < 0.02) { // 2% de probabilidad por frame de disparar
+      if (Math.random() < 0.02) { 
         enemyShoot(enemy);
       }
-    }
-
-    if (dist < 3) {
-      vida -= 0.1;
-      const elVida = document.getElementById('vida');
-      if (elVida) elVida.innerText = 'Vida: ' + Math.floor(vida);
     }
   });
 }
 
-// CONTAMINACION
+// CONTAMINACIÓN CIUDADANA
 setInterval(() => {
+  if (!player) return;
   contaminacion++;
   const elCont = document.getElementById('contaminacion');
   if (elCont) elCont.innerText = 'Contaminación: ' + contaminacion;
@@ -455,158 +434,163 @@ setInterval(() => {
 }, 3000);
 
 // ==========================================================
-// 💥 ACTUALIZACIÓN DE BALAS ENEMIGAS (CORREGIDA AL 100%)
+// 💥 CONTROL DE BALAS Y DETECCIÓN DE IMPACTOS / GAME OVER
 // ==========================================================
 function updateEnemyBullets() {
-  // 1. Creamos el ciclo para recorrer todas las balas de los robots
   for (let i = enemyBullets.length - 1; i >= 0; i--) {
     const b = enemyBullets[i];
-    
-    // Movemos la bala en cada cuadro de animación
     b.position.add(b.userData.velocity);
 
-    // 2. Detectar si le pega al jugador
     if (player) {
       const d = b.position.distanceTo(player.position);
       
       if (d < 2.0) {
         console.log("💥 ¡El jugador recibió daño enemigo!");
         
-        // RESTAR VIDA REAL
         vidaJugador -= 10; 
         if (vidaJugador < 0) vidaJugador = 0;
 
-        // ACTUALIZAR LA BARRA VISUAL EN EL HTML
         const elBarraVida = document.getElementById('barra-vida');
-        if (elBarraVida) {
-          elBarraVida.style.width = vidaJugador + '%';
-        }
+        if (elBarraVida) elBarraVida.style.width = vidaJugador + '%';
 
         if (vidaJugador <= 0) {
-          console.log("💀 GAME OVER - El robot fue destruido");
+          console.log("💀 GAME OVER");
+
+          // GUARDAR RÉCORDS HISTÓRICOS EN LOCALSTORAGE
+          // ✅ LÍNEA CORREGIDA:
+if (robotsMatados > recordRobots) {
+  localStorage.setItem('recordRobots', robotsMatados);
+  recordRobots = robotsMatados;
+}
+          if (basuraRecolectada > recordBasura) {
+            localStorage.setItem('recordBasura', basuraRecolectada);
+            recordBasura = basuraRecolectada;
+          }
+
+          // Letrero de Game Over interactivo neón
+          const cartel = document.createElement('div');
+          cartel.innerHTML = `
+            <div style="position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; 
+                        background: rgba(10, 0, 0, 0.88); display: flex; flex-direction: column; 
+                        justify-content: center; align-items: center; z-index: 1000; 
+                        font-family: 'Courier New', monospace; color: #ff0055; text-shadow: 0 0 15px #ff0055;">
+              <h1 style="font-size: 4rem; margin-bottom: 10px;">🔴 GAME OVER 🔴</h1>
+              <p style="color: #00ffcc; font-size: 1.4rem;">Robots Destruidos: ${robotsMatados} | Reciclaje: ${basuraRecolectada}</p>
+              <button onclick="window.location.reload()" style="margin-top: 20px; padding: 12px 25px; 
+                               background: transparent; border: 2px solid #00ffcc; color: #00ffcc; 
+                               font-weight: bold; cursor: pointer; box-shadow: 0 0 10px #00ffcc;">
+                REINTENTAR COMPATIR MARCA
+              </button>
+            </div>
+          `;
+          document.body.appendChild(cartel);
+
+          scene.remove(player);
+          player = null; 
+          
+          scene.remove(b);
+          enemyBullets.splice(i, 1);
+          break;
         }
 
-        // Borramos la bala de la pantalla y de la lista
         scene.remove(b);
         enemyBullets.splice(i, 1);
-        
-        // Usamos break para salir de este condicional de forma segura
         break; 
       }
     }
-    
-    // 3. Limpieza optimizada usando 'b' (si la bala se va muy lejos del centro del mapa)
+
     if (b.position.length() > 300) {
       scene.remove(b);
       enemyBullets.splice(i, 1);
     }
   }
 }
-// ==========================================================
-// 🔥 SISTEMA DE DETECCIÓN DE IMPACTO Y ELIMINACIÓN ENEMIGA
-// ==========================================================
+
 function updateBullets() {
-  // Recorremos las balas del jugador desde la última hasta la primera
   for (let bulletIndex = bullets.length - 1; bulletIndex >= 0; bulletIndex--) {
     const bullet = bullets[bulletIndex];
-    
-    // Mover la bala hacia adelante según la velocidad calculada al disparar
     bullet.position.add(bullet.userData.velocity);
-
     let bulletRemoved = false;
 
-    // Revisar si esta bala golpea a alguno de los enemigos vivos
     for (let enemyIndex = enemies.length - 1; enemyIndex >= 0; enemyIndex--) {
       const enemy = enemies[enemyIndex];
-      
-      // Medimos la distancia exacta entre la bala y el centro del robot enemigo
       const dist = bullet.position.distanceTo(enemy.position);
 
-      // AUMENTAMOS EL RADIO A 3.0: Si la bala entra en este rango, cuenta como golpe
       if (dist < 3.0) {
-        
-        // Restamos 25 de vida al enemigo (necesitarás 2 o 3 tiros para matarlo)
-        if (enemy.userData && enemy.userData.vida !== undefined) {
-          enemy.userData.vida -= 25;
-          console.log("¡Le diste al robot! Vida restante: " + enemy.userData.vida);
-        } else {
-          // Por si las dudas el enemigo no tenía la variable inicializada
-          enemy.userData = { vida: 25 }; 
-          enemy.userData.vida -= 25;
-        }
+        enemy.userData.vida -= 25;
 
-        // 1. Borramos la bala de la escena para que no lo atraviese y le pegue dos veces
         scene.remove(bullet);
         bullets.splice(bulletIndex, 1);
         bulletRemoved = true;
 
-        // ¡SI EL ENEMIGO SE QUEDA SIN VIDA, LO ELIMINAMOS!
         if (enemy.userData.vida <= 0) {
-          console.log("🤖 ¡Robot EcoBot eliminado por completo de la ciudad!");
+          console.log("🤖 ¡Robot EcoBot eliminado!");
           
-          // 🔥 ¡AQUÍ ACTIVAMOS LA EXPLOSIÓN!: Usamos la posición del robot que muere
+          robotsMatados++;
+          const elValRobots = document.getElementById('val-robots');
+          if (elValRobots) elValRobots.innerText = robotsMatados;
+
           crearExplosion(enemy.position.x, enemy.position.y, enemy.position.z);
-          
           scene.remove(enemy);          
-          enemies.splice(enemyIndex, 1); 
+          enemies.splice(enemyIndex, 1);
+
+          // RESPAWN INFINITO DE ROBOTS REBELDES (En 4 segundos)
+          setTimeout(() => {
+            crearEnemy(Math.random() * 120 - 60, Math.random() * 120 - 60);
+          }, 4000);
         }
-        
-        break; // Rompe el ciclo de enemigos porque esta bala ya impactó con uno
+        break; 
       }
     }
 
-    // Si la bala no golpeó a nadie pero ya viajó muy lejos, la borramos para no trabar el juego
     if (!bulletRemoved && bullet.position.length() > 300) {
       scene.remove(bullet);
       bullets.splice(bulletIndex, 1);
     }
   }
 }
-// ACTUALIZAR CÁMARA (Lógica movida dentro de una función segura)
+
+
+// ==========================================================
+// 🎥 CÁMARA EN TERCERA PERSONA 360° ÓRBITAL
+// ==========================================================
 function updateCamera() {
   if (player) {
-    camera.position.x = player.position.x + mouseX * 5;
-    camera.position.y = player.position.y + 8;
-    camera.position.z = player.position.z + 12;
-    camera.lookAt(player.position);
+    // 1. Calculamos la posición orbital de la cámara en 360 grados alrededor del robot
+    camera.position.x = player.position.x + radioCamara * Math.sin(camaraAnguloX) * Math.cos(camaraAnguloY);
+    camera.position.y = player.position.y + radioCamara * Math.sin(camaraAnguloY) + 2; // El +2 la eleva un poco
+    camera.position.z = player.position.z + radioCamara * Math.cos(camaraAnguloX) * Math.cos(camaraAnguloY);
+
+    // 2. Hacemos que la cámara mire fijamente al centro del jugador
+    // Elevamos el punto de mira un poco (y + 1.5) para apuntar a su cabeza/pecho y no a sus pies
+    const puntoMira = new THREE.Vector3(player.position.x, player.position.y + 1.5, player.position.z);
+    camera.lookAt(puntoMira);
   } else {
-    // Posición por defecto mientras carga el modelo para evitar pantalla negra fija
-    camera.position.set(0, 10, 20);
+    // Posición por defecto si el jugador muere
+    camera.position.set(0, 25, 40);
     camera.lookAt(0, 0, 0);
   }
 }
-// ==========================================================
-// 🔥 EFECTO DE EXPLOSIÓN POR PARTICULAS
-// ==========================================================
+
 function crearExplosion(x, y, z) {
   const numeroParticulas = 20;
   const particulasMatriz = [];
-
-  // Geometría y material brillante para los fragmentos
   const geo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
-  const mat = new THREE.MeshBasicMaterial({ color: 0xffaa00 }); // Naranja brillante
+  const mat = new THREE.MeshBasicMaterial({ color: 0xffaa00 }); 
 
   for (let i = 0; i < numeroParticulas; i++) {
     const p = new THREE.Mesh(geo, mat);
-    p.position.set(x, y + 0.5, z); // Aparecen a la altura del robot
-
-    // Velocidad aleatoria en todas direcciones (X, Y, Z)
+    p.position.set(x, y + 0.5, z);
     p.userData = {
-      velocity: new THREE.Vector3(
-        (Math.random() - 0.5) * 0.4,
-        (Math.random()) * 0.4, // Hacia arriba
-        (Math.random() - 0.5) * 0.4
-      ),
-      vida: 30 // Duración de la partícula en cuadros de animación
+      velocity: new THREE.Vector3((Math.random() - 0.5) * 0.4, (Math.random()) * 0.4, (Math.random() - 0.5) * 0.4),
+      vida: 30 
     };
-
     scene.add(p);
     particulasMatriz.push(p);
   }
-
-  // Guardamos el grupo de partículas en nuestra lista global
   explosions.push(particulasMatriz);
 }
+
 function updateExplosions() {
   for (let eIndex = explosions.length - 1; eIndex >= 0; eIndex--) {
     const grupo = explosions[eIndex];
@@ -614,61 +598,48 @@ function updateExplosions() {
 
     grupo.forEach(p => {
       if (p.userData.vida > 0) {
-        // Mover partícula
         p.position.add(p.userData.velocity);
-        
-        // Simular gravedad (caída lenta)
         p.userData.velocity.y -= 0.01;
-        
-        // Encoger la partícula poco a poco
         p.scale.multiplyScalar(0.95);
-        
-        // Restar tiempo de vida
         p.userData.vida--;
         grupoVivo = true;
       } else {
-        scene.remove(p); // Quitar de la pantalla cuando muere
+        scene.remove(p); 
       }
     });
 
-    // Si todas las partículas de esta explosión desaparecieron, borramos el grupo
-    if (!grupoVivo) {
-      explosions.splice(eIndex, 1);
-    }
+    if (!grupoVivo) explosions.splice(eIndex, 1);
   }
 }
-// LOOP PRINCIPAL
+
+// ==========================================================
+// 🔄 LOOP DE ANIMACIÓN Y EVENTOS
+// ==========================================================
 function animate() {
   requestAnimationFrame(animate);
   movePlayer();
+  updateCamera(); 
+
   recogerBasura();
   enemyAI();
   updateBullets();
   updateEnemyBullets();
-  updateExplosions(); // 🔥 AGREGA ESTA LÍNEA AQUÍ
-  updateCamera(); 
+  updateExplosions(); 
+  
   renderer.render(scene, camera);
 }
-
 animate();
 
-// RESPONSIVE
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-document.addEventListener('mousedown', (e) => {
-  if (e.button === 0) { 
-    shoot();
-  }
-});
-// ==========================================================
-// 📱 DETECTAR CONTROLES TÁCTILES PARA CELULAR
-// ==========================================================
+
+
+// DETECTAR CONTROLES TÁCTILES PARA CELULAR
 if (window.innerWidth <= 1024) {
-  // 1. Crear el Joystick Visual
   const manager = nipplejs.create({
     zone: document.getElementById('zona-joystick'),
     mode: 'static',
@@ -676,10 +647,8 @@ if (window.innerWidth <= 1024) {
     color: '#00ffcc'
   });
 
-  // 2. Escuchar el movimiento del Joystick y pasarlo a las variables de movimiento
   manager.on('move', (evt, data) => {
     if (data.vector) {
-      // Convertimos la inclinación de la palanca en direcciones -1 o 1
       keys['w'] = data.vector.y > 0.3;
       keys['s'] = data.vector.y < -0.3;
       keys['a'] = data.vector.x < -0.3;
@@ -687,20 +656,79 @@ if (window.innerWidth <= 1024) {
     }
   });
 
-  // Cuando sueltas la palanca, el robot se detiene
   manager.on('end', () => {
-    keys['w'] = false;
-    keys['s'] = false;
-    keys['a'] = false;
-    keys['d'] = false;
+    keys['w'] = false; keys['s'] = false; keys['a'] = false; keys['d'] = false;
   });
 
-  // 3. Configurar botón de disparo físico táctil
   const btnDisparo = document.getElementById('boton-disparar-movil');
   if (btnDisparo) {
     btnDisparo.addEventListener('touchstart', (e) => {
       e.preventDefault();
-      shoot(); // Dispara al instante al tocar el botón
+      shoot(); 
     });
   }
 }
+// ==========================================================
+// 🖱️ CONTROL DE CÁMARA LIBRE CON CLIC DERECHO
+// ==========================================================
+
+// Desactivamos el menú contextual que sale en Windows al dar clic derecho
+// para que no estorbe mientras giras la cámara
+renderer.domElement.addEventListener('contextmenu', (e) => e.preventDefault());
+
+document.addEventListener('mousemove', (event) => {
+  // 🔥 LA CÁMARA SOLO GIRA SI EL JUGADOR ESTÁ VIVO Y DEJA PRESIONADO EL CLIC DERECHO (buttons === 2)
+  if (player && event.buttons === 2) {
+    // Usamos event.movementX/Y para un arrastre suave
+    camaraAnguloX -= event.movementX * 0.005; // Sensibilidad horizontal
+    camaraAnguloY += event.movementY * 0.005; // Sensibilidad vertical
+
+    // Límites para evitar que la cámara gire verticalmente de cabeza
+    if (camaraAnguloY < 0.2) camaraAnguloY = 0.2;
+    if (camaraAnguloY > 1.2) camaraAnguloY = 1.2;
+  }
+});
+
+// Cambiamos el disparo para que use el Clic Izquierdo común y corriente
+document.addEventListener('mousedown', (e) => {
+  // e.button === 0 es el Clic Izquierdo limpio (sin bloquear pantalla)
+  if (e.button === 0 && player) {
+    shoot();
+  }
+});
+// ==========================================================
+// 📱 CONTROL COMPATIBLE PARA CELULARES (TOUCH)
+// ==========================================================
+
+// Variable para recordar dónde empezó el dedo a tocar la pantalla
+let touchInicioX = 0;
+let touchInicioY = 0;
+
+document.addEventListener('touchstart', (event) => {
+  if (player && event.touches.length === 1) {
+    touchInicioX = event.touches[0].clientX;
+    touchInicioY = event.touches[0].clientY;
+  }
+}, { passive: true });
+
+document.addEventListener('touchmove', (event) => {
+  // Si arrastras un dedo por la pantalla, giras la cámara en 360°
+  if (player && event.touches.length === 1) {
+    let touchActualX = event.touches[0].clientX;
+    let touchActualY = event.touches[0].clientY;
+
+    // Calculamos cuánto se movió el dedo
+    let deltaX = touchActualX - touchInicioX;
+    let deltaY = touchActualY - touchInicioY;
+
+    camaraAnguloX -= deltaX * 0.005; // Sensibilidad táctil horizontal
+    camaraAnguloY += deltaY * 0.005; // Sensibilidad táctil vertical
+
+    if (camaraAnguloY < 0.2) camaraAnguloY = 0.2;
+    if (camaraAnguloY > 1.2) camaraAnguloY = 1.2;
+
+    // Actualizamos el inicio para el siguiente fotograma
+    touchInicioX = touchActualX;
+    touchInicioY = touchActualY;
+  }
+}, { passive: true });

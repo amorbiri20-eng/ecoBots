@@ -44,6 +44,18 @@
   }
 </style>
 <head>
+  <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#00ffff">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<script>
+  // Activamos el asistente en memoria del celular
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js')
+      .then(() => console.log('🚀 ¡Juego listo para instalarse!'))
+      .catch(err => console.log('Error al registrar PWA', err));
+  }
+</script>
   <meta charset="UTF-8">
   <title>EcoBots</title>
   <link rel="stylesheet" href="style.css">
@@ -128,6 +140,50 @@
     background: linear-gradient(90deg, #0066ff, #00ffff);
     box-shadow: 0 0 10px #0066ff;
   }
+  <div id="marcador-contenedor">
+  <div class="marcador-bloque">
+    <p>🤖 Robots Eliminados: <span id="val-robots">0</span></p>
+    <p>🥇 Máximo Robots: <span id="record-robots">0</span></p>
+  </div>
+  <div class="marcador-bloque">
+    <p>♻️ Basura Reciclada: <span id="val-basura">0</span></p>
+    <p>🏆 Máxima Basura: <span id="record-basura">0</span></p>
+  </div>
+</div>
+
+<style>
+  /* Estilos Neón Cyberpunk para los marcadores */
+  #marcador-contenedor {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 20px;
+    font-family: 'Courier New', monospace;
+    z-index: 100;
+  }
+  .marcador-bloque {
+    background: rgba(10, 10, 25, 0.85);
+    border: 2px solid #00ffcc;
+    box-shadow: 0 0 10px #00ffcc;
+    padding: 10px 15px;
+    color: #fff;
+    border-radius: 5px;
+  }
+  .marcador-bloque p {
+    margin: 4px 0;
+    font-size: 1rem;
+    font-weight: bold;
+  }
+  #record-robots, #record-basura {
+    color: #ff0055; /* El récord resalta en color rosa/rojo */
+    text-shadow: 0 0 5px #ff0055;
+  }
+  #val-robots, #val-basura {
+    color: #00ffcc;
+    text-shadow: 0 0 5px #00ffcc;
+  }
+</style>
 </style>
 <script type="module" src="./game.js"></script>
 
